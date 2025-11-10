@@ -1,115 +1,146 @@
 ---
 title: "Proposal"
-date: 2025-09-30
+date: 2025-11-01
 weight: 2
 chapter: false
 pre: " <b> 2. </b> "
 ---
-{{% notice warning %}}
-⚠️ **Note:** The information below is for reference purposes only. Please **do not copy verbatim** for your report, including this warning.
-{{% /notice %}}
 
-In this section, you need to summarize the contents of the workshop that you **plan** to conduct.
 
-# IoT Weather Platform for Lab Research
-## A Unified AWS Serverless Solution for Real-Time Weather Monitoring
+# Security Scan Pipeline on AWS Cloud
+## Automated Source Code Security Analysis for a DevSecOps Pipeline
 
 ### 1. Executive Summary
-The IoT Weather Platform is designed for the ITea Lab team in Ho Chi Minh City to enhance weather data collection and analysis. It supports up to 5 weather stations, with potential scalability to 10-15, utilizing Raspberry Pi edge devices with ESP32 sensors to transmit data via MQTT. The platform leverages AWS Serverless services to deliver real-time monitoring, predictive analytics, and cost efficiency, with access restricted to 5 lab members via Amazon Cognito.
+The Security Scan & Deployment Pipeline project aims to automate the entire build–scan–deploy lifecycle of an application on AWS Cloud, integrating directly with GitHub to implement a practical DevSecOps workflow.
+
+Objectives:
+
+- Detect security vulnerabilities and code smells early using Amazon CodeGuru Reviewer.
+- Automatically build and produce artifacts on new commits.
+- Store artifacts securely in Amazon S3.
+- Automatically deploy applications to Amazon EC2 via AWS CodeDeploy.
+
+This pipeline shortens release time, improves security posture, and ensures consistency across the team's DevSecOps processes.
 
 ### 2. Problem Statement
-### What’s the Problem?
-Current weather stations require manual data collection, becoming unmanageable with multiple units. There is no centralized system for real-time data or analytics, and third-party platforms are costly and overly complex.
+Current issues:
 
-### The Solution
-The platform uses AWS IoT Core to ingest MQTT data, AWS Lambda and API Gateway for processing, Amazon S3 for storage (including a data lake), and AWS Glue Crawlers and ETL jobs to extract, transform, and load data from the S3 data lake to another S3 bucket for analysis. AWS Amplify with Next.js provides the web interface, and Amazon Cognito ensures secure access. Similar to Thingsboard and CoreIoT, users can register new devices and manage connections, though this platform operates on a smaller scale and is designed for private use. Key features include real-time dashboards, trend analysis, and low operational costs.
+- Manual build and code checks can miss security defects.
+- Application deployments to EC2 are not automated, which is time-consuming and error-prone.
+- There is no centralized system to track artifacts or security scan reports.
 
-### Benefits and Return on Investment
-The solution establishes a foundational resource for lab members to develop a larger IoT platform, serving as a study resource, and provides a data foundation for AI enthusiasts for model training or analysis. It reduces manual reporting for each station via a centralized platform, simplifying management and maintenance, and improves data reliability. Monthly costs are $0.66 USD per the AWS Pricing Calculator, with a 12-month total of $7.92 USD. All IoT equipment costs are covered by the existing weather station setup, eliminating additional development expenses. The break-even period of 6-12 months is achieved through significant time savings from reduced manual work.
+Proposed solution:
+
+Build an AWS CodePipeline connected to GitHub via webhook to automatically trigger the pipeline on each commit. The flow will be:
+
+1. CodePipeline receives commit events from GitHub.
+2. CodeBuild builds the source and runs security analysis using Amazon CodeGuru Reviewer.
+3. Build artifacts and scan results are uploaded to Amazon S3.
+4. CodeDeploy pulls artifacts from S3 and deploys them to EC2.
+5. The entire process is observable via the AWS Console and CloudWatch Logs.
+
+Benefits and ROI:
+
+- Reduce manual deployment time by 60–70%.
+- Improve security through automated CodeGuru analysis.
+- Ensure a closed-loop CI/CD process, reducing misconfiguration risk.
+- Lower operational costs through automation.
 
 ### 3. Solution Architecture
-The platform employs a serverless AWS architecture to manage data from 5 Raspberry Pi-based stations, scalable to 15. Data is ingested via AWS IoT Core, stored in an S3 data lake, and processed by AWS Glue Crawlers and ETL jobs to transform and load it into another S3 bucket for analysis. Lambda and API Gateway handle additional processing, while Amplify with Next.js hosts the dashboard, secured by Cognito. The architecture is detailed below:
+The pipeline is designed as a DevSecOps Serverless Hybrid architecture, combining AWS services to provide end-to-end automation.
 
-![IoT Weather Station Architecture](/images/2-Proposal/edge_architecture.jpeg)
+Overview diagram:
 
-![IoT Weather Platform Architecture](/images/2-Proposal/platform_architecture.jpeg)
+![DevOps / Pipeline Engineer](/images/2-Proposal/diagram.png)
 
-### AWS Services Used
-- **AWS IoT Core**: Ingests MQTT data from 5 stations, scalable to 15.
-- **AWS Lambda**: Processes data and triggers Glue jobs (two functions).
-- **Amazon API Gateway**: Facilitates web app communication.
-- **Amazon S3**: Stores raw data in a data lake and processed outputs (two buckets).
-- **AWS Glue**: Crawlers catalog data, and ETL jobs transform and load it.
-- **AWS Amplify**: Hosts the Next.js web interface.
-- **Amazon Cognito**: Secures access for lab users.
+AWS services used:
 
-### Component Design
-- **Edge Devices**: Raspberry Pi collects and filters sensor data, sending it to IoT Core.
-- **Data Ingestion**: AWS IoT Core receives MQTT messages from the edge devices.
-- **Data Storage**: Raw data is stored in an S3 data lake; processed data is stored in another S3 bucket.
-- **Data Processing**: AWS Glue Crawlers catalog the data, and ETL jobs transform it for analysis.
-- **Web Interface**: AWS Amplify hosts a Next.js app for real-time dashboards and analytics.
-- **User Management**: Amazon Cognito manages user access, allowing up to 5 active accounts.
+- AWS CodePipeline: orchestrates automated pipeline stages.
+- AWS CodeBuild: builds the project and runs security scans.
+- Amazon CodeGuru Reviewer: analyzes source code and reports issues.
+- Amazon S3: stores artifacts and scan outputs.
+- AWS CodeDeploy: deploys artifacts to EC2 instances.
+- Amazon EC2: runtime environment for the application.
+- Amazon SNS: sends build/deploy notifications.
+- CloudWatch, CloudTrail, GuardDuty, Detective, Security Hub: monitoring, investigation, and security aggregation.
 
-### 4. Technical Implementation
-**Implementation Phases**
-This project has two parts—setting up weather edge stations and building the weather platform—each following 4 phases:
-- Build Theory and Draw Architecture: Research Raspberry Pi setup with ESP32 sensors and design the AWS serverless architecture (1 month pre-internship)
-- Calculate Price and Check Practicality: Use AWS Pricing Calculator to estimate costs and adjust if needed (Month 1).
-- Fix Architecture for Cost or Solution Fit: Tweak the design (e.g., optimize Lambda with Next.js) to stay cost-effective and usable (Month 2).
-- Develop, Test, and Deploy: Code the Raspberry Pi setup, AWS services with CDK/SDK, and Next.js app, then test and release to production (Months 2-3).
+### 4. Technical Deployment
+Deployment stages:
 
-**Technical Requirements**
-- Weather Edge Station: Sensors (temperature, humidity, rainfall, wind speed), a microcontroller (ESP32), and a Raspberry Pi as the edge device. Raspberry Pi runs Raspbian, handles Docker for filtering, and sends 1 MB/day per station via MQTT over Wi-Fi.
-- Weather Platform: Practical knowledge of AWS Amplify (hosting Next.js), Lambda (minimal use due to Next.js), AWS Glue (ETL), S3 (two buckets), IoT Core (gateway and rules), and Cognito (5 users). Use AWS CDK/SDK to code interactions (e.g., IoT Core rules to S3). Next.js reduces Lambda workload for the fullstack web app.
+1. Connect GitHub to CodePipeline: create a webhook and grant access via OIDC or a PAT; configure the pipeline to run on commits.
+2. Create a CodeBuild project: environment (Ubuntu + Node.js/Python). Write a `buildspec.yml` to build and invoke CodeGuru.
+3. Configure CodeDeploy: create a Deployment Group linked to EC2 instances and provide an `appspec.yml`.
+4. Monitoring & security:
+     - CloudWatch collects pipeline and application logs.
+     - AWS CloudTrail records API activity and user actions.
+     - GuardDuty detects suspicious behavior.
+     - Detective helps analyze incident root causes.
+     - Security Hub aggregates findings across services.
+     - SNS sends pipeline status notifications to developers.
 
-### 5. Timeline & Milestones
-**Project Timeline**
-- Pre-Internship (Month 0): 1 month for planning and old station review.
-- Internship (Months 1-3): 3 months.
-    - Month 1: Study AWS and upgrade hardware.
-    - Month 2: Design and adjust architecture.
-    - Month 3: Implement, test, and launch.
-- Post-Launch: Up to 1 year for research.
+### 5. Roadmap & Milestones
+- Pre-internship (September): 1 month planning — research, create IAM Roles, S3 bucket, EC2 instances, and connect GitHub.
+- Internship (October–November):
+    - October: configure CodePipeline and GitHub webhooks.
+    - November: author `buildspec.yml` and `appspec.yml`, integrate CodeGuru, and add monitoring/security services (SNS, GuardDuty, Detective, Security Hub).
+- Post-deployment: further research and improvements.
 
-### 6. Budget Estimation
-You can find the budget estimation on the [AWS Pricing Calculator](https://calculator.aws/#/estimate?id=621f38b12a1ef026842ba2ddfe46ff936ed4ab01).  
-Or you can download the [Budget Estimation File](../attachments/budget_estimation.pdf).
+### 6. Budget Estimate
+See the cost estimate on the AWS Pricing Calculator:
+https://calculator.aws/#/estimate?id=621f38b12a1ef026842ba2ddfe46ff936ed4ab01
+Or download the budget estimation file: `../attachments/budget_estimation.pdf`.
 
-### Infrastructure Costs
-- AWS Services:
-    - AWS Lambda: $0.00/month (1,000 requests, 512 MB storage).
-    - S3 Standard: $0.15/month (6 GB, 2,100 requests, 1 GB scanned).
-    - Data Transfer: $0.02/month (1 GB inbound, 1 GB outbound).
-    - AWS Amplify: $0.35/month (256 MB, 500 ms requests).
-    - Amazon API Gateway: $0.01/month (2,000 requests).
-    - AWS Glue ETL Jobs: $0.02/month (2 DPUs).
-    - AWS Glue Crawlers: $0.07/month (1 crawler).
-    - MQTT (IoT Core): $0.08/month (5 devices, 45,000 messages).
+Estimated infrastructure costs:
 
-Total: $0.7/month, $8.40/12 months
+- AWS CodePipeline: $0.40/month (2 pipelines running daily).
+- AWS CodeBuild: $0.35/month (30 builds, 5 minutes each).
+- Amazon S3: $0.10/month (artifacts & logs).
+- AWS CodeDeploy: $0.20/month (2 deployments/month).
+- Amazon EC2 (t2.micro): $0.10/month (application instance).
+- CloudWatch + SNS: $0.05/month (monitoring & notifications).
 
-- Hardware: $265 one-time (Raspberry Pi 5 and sensors).
+Estimated total: ≈ $1.20/month, $14.40/year (assuming AWS Free Tier offsets).
 
 ### 7. Risk Assessment
-#### Risk Matrix
-- Network Outages: Medium impact, medium probability.
-- Sensor Failures: High impact, low probability.
-- Cost Overruns: Medium impact, low probability.
+Risk matrix:
 
-#### Mitigation Strategies
-- Network: Local storage on Raspberry Pi with Docker.
-- Sensors: Regular checks and spares.
-- Cost: AWS budget alerts and optimization.
+- GitHub webhook failure — CodePipeline not triggered.
+- Timeouts during CodeGuru analysis or CodeBuild runs.
+- Missing or corrupted artifacts during deployment to EC2.
+- Pipeline interruption due to IAM permission issues.
+- Costs exceeding AWS Free Tier limits.
 
-#### Contingency Plans
-- Revert to manual methods if AWS fails.
-- Use CloudFormation for cost-related rollbacks.
+Mitigation strategies:
+
+- Verify IAM Role configuration, OAuth tokens, and GitHub webhook triggers.
+- Limit scan scope and optimize `buildspec.yml` to analyze only changed code.
+- Run unit tests before building and use checksums to validate artifact integrity.
+- Validate IAM policies for CodeBuild, CodeDeploy, S3, and SNS.
+- Set up AWS Budgets and billing alerts via SNS email notifications.
+
+Contingency plan:
+
+- Manually trigger pipelines via the AWS Console or AWS CLI if automatic triggers fail.
+- If timeouts occur, split the pipeline (e.g., separate build and scan stages) or run fallback jobs during off-peak hours.
+- Use CodeDeploy rollback to revert to the previous artifact stored in S3 if a deployment fails.
+- Create a backup IAM role with equivalent permissions to activate temporarily if the main role has issues.
+- If costs spike, pause non-essential pipelines, clean up S3, and stop EC2 instances.
 
 ### 8. Expected Outcomes
-#### Technical Improvements: 
-Real-time data and analytics replace manual processes.  
-Scalable to 10-15 stations.
-#### Long-term Value
-1-year data foundation for AI research.  
-Reusable for future projects.
+Technical achievements:
+
+- Full automation of CI/CD and security scanning.
+- Continuous code and security analysis using CodeGuru.
+- Seamless deployments via CodeDeploy to EC2.
+- Comprehensive monitoring via CloudWatch, Detective, and Security Hub.
+- Immediate email alerts through SNS.
+
+Long-term value:
+
+- A DevSecOps reference pattern suitable for workshops, learning, and real-world deployments.
+
+Potential extensions:
+
+- Automated testing.
+- Deployments to ECS/EKS or AWS Lambda.
+- Integrate additional scanners like Trivy, SonarQube, or Checkov for broader security coverage.
